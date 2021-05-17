@@ -6,14 +6,23 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+import javax.sql.DataSource;
+
 @EnableWebSecurity
 class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String MANAGER = "manager";
     private static final String HELPDESKMEDEWERKER = "helpdeskmedewerker";
     private static final String MAGAZIJNIER = "magazijnier";
+    private final DataSource dataSource;
+
+    SecurityConfig(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+       //auth.jdbcAuthentication().dataSource(dataSource);
         auth.inMemoryAuthentication()
                 .withUser("joe")
                 .password("{noop}theboss")
@@ -21,6 +30,8 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .withUser("averell")
                 .password("{noop}hungry")
                 .authorities(HELPDESKMEDEWERKER, MAGAZIJNIER);
+
+
     }
 
     @Override
@@ -32,10 +43,11 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.formLogin();
-        http.authorizeRequests(requests -> requests.mvcMatchers("/offertes/**").hasAuthority(MANAGER)
+        http.formLogin(login->login.loginPage("/login"));
+        http.authorizeRequests(requests -> requests.mvcMatchers("/offertes/**")
+                .hasAuthority(MANAGER)
                 .mvcMatchers("/werknemers/**")
-                .hasAnyAuthority(MAGAZIJNIER, HELPDESKMEDEWERKER))
-        ;
+                .hasAnyAuthority(MAGAZIJNIER, HELPDESKMEDEWERKER));
+        http.logout(logout->logout.logoutSuccessUrl("/"));
     }
 }
